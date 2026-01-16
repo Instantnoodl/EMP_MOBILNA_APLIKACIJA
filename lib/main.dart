@@ -105,23 +105,42 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override void initState() {
     super.initState();
-    controllerMap = {
-      'n': nController,
-      'k': kController,
-      'p': pController,
-      'lambda': lambdaController,
-      'x': xDistController,
-      'a': aController,
-      'b': bController,
-      'data': dataController,
-      'pA': pAController,
-      'pB': pBController,
-      'pAB': pABController,
-      'mu': muController,
-      'sigma': sigmaController,
-    };
-    loadHistory();
 
+      controllerMap = {
+        // kombinatorika
+        'n': nController,
+        'k': kController,
+
+        // osnovna verjetnost
+        'ugodni': ugodniController,
+        'vsi': vsiController,
+        'dolzinaUgodni': dolzinaUgodniController,
+        'dolzinaCelota': dolzinaCelotaController,
+
+        // dogodki
+        'pA': pAController,
+        'pB': pBController,
+        'pAB': pABController,
+
+        // porazdelitve
+        'p': pController,
+        'lambda': lambdaController,
+        'x': xDistController,
+        'a': aController,
+        'b': bController,
+
+        // statistika
+        'data': dataController,
+
+        // CLT / normalna
+        'mu': muController,
+        'sigma': sigmaController,
+        'nClt': nCltController,
+      };
+
+
+
+    loadHistory();
   }
   /* MODE */
   Mode mode = Mode.kombinatorika;
@@ -294,6 +313,18 @@ class _MyHomePageState extends State<MyHomePage> {
         .map((e) => e.key)
         .toList();
   }
+  double mean(List<double> data) {
+    double sum = data.reduce((a, b) => a + b);
+    return sum / data.length;
+  }
+
+  double minimum(List<double> data) {
+    return data.reduce(min);
+  }
+
+  double maximum(List<double> data) {
+    return data.reduce(max);
+  }
 
   void calculateOpisnaStatistika() {
     final data = parseData();
@@ -303,18 +334,60 @@ class _MyHomePageState extends State<MyHomePage> {
       return;
     }
 
+    final sorted = List<double>.from(data)..sort();
+    final n = sorted.length;
+
+    double avg = mean(data);
     double med = median(List.from(data));
     List<double> mod = modus(data);
+    double minVal = minimum(data);
+    double maxVal = maximum(data);
+    double range = maxVal - minVal;
+
+    // postopek za povprečje
+    String sumProcess = data.join(' + ');
+    double sum = data.reduce((a, b) => a + b);
 
     setState(() {
       result =
-      'Mediana: ${med.toStringAsFixed(4)}\n'
-          'Modus: ${mod.isEmpty ? 'ne obstaja' : mod.join(', ')}';
+      'Opisna statistika\n'
+          '=================\n\n'
+          'Podatki:\n'
+          '${data.join(', ')}\n\n'
+
+          'Število podatkov:\n'
+          'n = $n\n\n'
+
+          'Aritmetična sredina (povprečje):\n'
+          'x̄ = (x₁ + x₂ + ... + xₙ) / n\n'
+          'x̄ = ($sumProcess) / $n\n'
+          'x̄ = ${sum.toStringAsFixed(4)} / $n\n'
+          'x̄ = ${avg.toStringAsFixed(4)}\n\n'
+
+          'Mediana:\n'
+          '${n.isOdd
+          ? 'Ker je n liho, vzamemo srednji element.'
+          : 'Ker je n sodo, vzamemo povprečje srednjih dveh elementov.'}\n'
+          'Mediana = ${med.toStringAsFixed(4)}\n\n'
+
+          'Modus:\n'
+          '${mod.isEmpty ? 'Modus ne obstaja.' : mod.join(', ')}\n\n'
+
+          'Minimum:\n'
+          'min = ${minVal.toStringAsFixed(4)}\n\n'
+
+          'Maksimum:\n'
+          'max = ${maxVal.toStringAsFixed(4)}\n\n'
+
+          'Razpon:\n'
+          'R = max − min = ${maxVal.toStringAsFixed(4)} − ${minVal.toStringAsFixed(4)}\n'
+          'R = ${range.toStringAsFixed(4)}';
     });
+
     final entry = HistoryEntry(
       mode: Mode.opisnaStatistika,
       inputs: {
-        'data': dataController.text, // npr. "1,2,3,4"
+        'data': dataController.text,
       },
       result: result,
       time: DateTime.now(),
@@ -325,8 +398,8 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     saveHistory();
-
   }
+
   //CLI
   void calculateCLT() {
     double? mu = double.tryParse(muController.text);
@@ -369,41 +442,53 @@ class _MyHomePageState extends State<MyHomePage> {
 
     switch (selectedOsVrjetnost) {
 
+    /* ================= NAVADNA ================= */
       case OsVrjetnost.navadna:
         int? ugodni = int.tryParse(ugodniController.text);
         int? vsi = int.tryParse(vsiController.text);
 
-        if (ugodni == null ||
-            vsi == null ||
-            vsi == 0 ||
-            ugodni < 0 ||
-            ugodni > vsi) {
+        if (ugodni == null || vsi == null || vsi == 0 || ugodni < 0 || ugodni > vsi) {
           setState(() => result = 'Invalid input');
           return;
         }
 
         value = ugodni / vsi;
 
-        setState(() {
-          result =
-          'Navadna verjetnost\n'
-              '------------------\n'
-              'Podatki:\n'
-              'ugodnih izidov = $ugodni\n'
-              'vseh izidov = $vsi\n\n'
-              'Formula:\n'
-              'P = ugodni / vsi\n\n'
-              'Postopek:\n'
-              'P = $ugodni / $vsi\n'
-              'P = ${value.toStringAsFixed(4)}';
-        });
+        final res =
+            'Navadna verjetnost\n'
+            '------------------\n'
+            'Podatki:\n'
+            'ugodnih izidov = $ugodni\n'
+            'vseh izidov = $vsi\n\n'
+            'Formula:\n'
+            'P = ugodni / vsi\n\n'
+            'Postopek:\n'
+            'P = $ugodni / $vsi\n'
+            'P = ${value.toStringAsFixed(4)}';
+
+        setState(() => result = res);
+
+
+        history.insert(
+          0,
+          HistoryEntry(
+            mode: Mode.osVrjetnost,
+            inputs: {
+              'ugodni': ugodniController.text,
+              'vsi': vsiController.text,
+            },
+            result: res,
+            time: DateTime.now(),
+          ),
+        );
+
+        saveHistory();
         break;
 
+    /* ================= GEOMETRIJSKA ================= */
       case OsVrjetnost.geometrijska:
-        double? dolzinaUgodni =
-        double.tryParse(dolzinaUgodniController.text);
-        double? dolzinaCelota =
-        double.tryParse(dolzinaCelotaController.text);
+        double? dolzinaUgodni = double.tryParse(dolzinaUgodniController.text);
+        double? dolzinaCelota = double.tryParse(dolzinaCelotaController.text);
 
         if (dolzinaUgodni == null ||
             dolzinaCelota == null ||
@@ -416,22 +501,39 @@ class _MyHomePageState extends State<MyHomePage> {
 
         value = dolzinaUgodni / dolzinaCelota;
 
-        setState(() {
-          result =
-          'Geometrijska verjetnost\n'
-              '----------------------\n'
-              'Podatki:\n'
-              'ugodna dolžina = $dolzinaUgodni\n'
-              'celotna dolžina = $dolzinaCelota\n\n'
-              'Formula:\n'
-              'P = ugodna dolžina / celotna dolžina\n\n'
-              'Postopek:\n'
-              'P = $dolzinaUgodni / $dolzinaCelota\n'
-              'P = ${value.toStringAsFixed(4)}';
-        });
+        final res =
+            'Geometrijska verjetnost\n'
+            '----------------------\n'
+            'Podatki:\n'
+            'ugodna dolžina = $dolzinaUgodni\n'
+            'celotna dolžina = $dolzinaCelota\n\n'
+            'Formula:\n'
+            'P = ugodna dolžina / celotna dolžina\n\n'
+            'Postopek:\n'
+            'P = $dolzinaUgodni / $dolzinaCelota\n'
+            'P = ${value.toStringAsFixed(4)}';
+
+        setState(() => result = res);
+
+
+        history.insert(
+          0,
+          HistoryEntry(
+            mode: Mode.osVrjetnost,
+            inputs: {
+              'dolzinaUgodni': dolzinaUgodniController.text,
+              'dolzinaCelota': dolzinaCelotaController.text,
+            },
+            result: res,
+            time: DateTime.now(),
+          ),
+        );
+
+        saveHistory();
         break;
     }
   }
+
 
 
 
@@ -570,6 +672,8 @@ class _MyHomePageState extends State<MyHomePage> {
     double value;
 
     try {
+      Map<String, String> inputs = {};
+
       /* ================= DISKRETNE ================= */
       if (selectedTip == TipPorazdelitve.diskretna) {
 
@@ -595,6 +699,11 @@ class _MyHomePageState extends State<MyHomePage> {
               'Razlaga:\n'
               'Bernoullijeva porazdelitev opisuje en sam poskus\n'
               'z dvema možnima izidoma (uspeh ali neuspeh).';
+
+          inputs = {
+            'p': pController.text,
+            'x': xDistController.text,
+          };
         }
 
         /* ===== BINOMSKA ===== */
@@ -622,6 +731,12 @@ class _MyHomePageState extends State<MyHomePage> {
               'Binomska porazdelitev opisuje verjetnost\n'
               'natanko k uspehov v n neodvisnih poskusih,\n'
               'kjer je verjetnost uspeha enaka p.';
+
+          inputs = {
+            'n': nDistController.text,
+            'k': kDistController.text,
+            'p': pController.text,
+          };
         }
 
         /* ===== POISSON ===== */
@@ -647,6 +762,11 @@ class _MyHomePageState extends State<MyHomePage> {
               'Poissonova porazdelitev opisuje verjetnost,\n'
               'da se bo v določenem časovnem ali prostorskem\n'
               'intervalu zgodilo natanko k dogodkov.';
+
+          inputs = {
+            'k': kDistController.text,
+            'lambda': lambdaController.text,
+          };
         }
       }
 
@@ -680,6 +800,12 @@ class _MyHomePageState extends State<MyHomePage> {
               'Normalna porazdelitev opisuje zvezne\n'
               'naključne spremenljivke, kjer so vrednosti\n'
               'simetrično razporejene okoli povprečja μ.';
+
+          inputs = {
+            'x': xDistController.text,
+            'mu': muController.text,
+            'sigma': sigmaController.text,
+          };
         }
 
         /* ===== EKSPONENTNA ===== */
@@ -704,6 +830,11 @@ class _MyHomePageState extends State<MyHomePage> {
               'Razlaga:\n'
               'Eksponentna porazdelitev opisuje čas do\n'
               'naslednjega dogodka v Poissonovem procesu.';
+
+          inputs = {
+            'x': xDistController.text,
+            'lambda': lambdaController.text,
+          };
         }
 
         /* ===== UNIFORMNA ===== */
@@ -730,14 +861,33 @@ class _MyHomePageState extends State<MyHomePage> {
               'Razlaga:\n'
               'Uniformna porazdelitev pomeni, da so vse\n'
               'vrednosti na intervalu [a, b] enako verjetne.';
+
+          inputs = {
+            'x': xDistController.text,
+            'a': aController.text,
+            'b': bController.text,
+          };
         }
       }
+
+      history.insert(
+        0,
+        HistoryEntry(
+          mode: Mode.porazdelitve,
+          inputs: inputs,
+          result: result,
+          time: DateTime.now(),
+        ),
+      );
+
+      saveHistory();
 
       setState(() {});
     } catch (e) {
       setState(() => result = 'Invalid input');
     }
   }
+
 
 
 
