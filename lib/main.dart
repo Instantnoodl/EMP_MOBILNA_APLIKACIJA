@@ -145,6 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
     TextEditingController(),
     TextEditingController(),
   ];
+  bool showAdvancedUI = true;
 
   Map<String, TextEditingController> intersectionControllers = {};
   Dogodki selectedDogodek = Dogodki.vsota;
@@ -569,166 +570,175 @@ class _MyHomePageState extends State<MyHomePage> {
     double value;
 
     try {
-      /* ================= BERNOULLI ================= */
-      if (selectedDiskretna == DiskretnaPorazdelitev.bernoulli) {
-        double p = double.parse(pController.text);
-        int x = int.parse(xDistController.text);
+      /* ================= DISKRETNE ================= */
+      if (selectedTip == TipPorazdelitve.diskretna) {
 
-        value = (x == 1) ? p : (1 - p);
+        /* ===== BERNOULLI ===== */
+        if (selectedDiskretna == DiskretnaPorazdelitev.bernoulli) {
+          double p = double.parse(pController.text);
+          int x = int.parse(xDistController.text);
 
-        result =
-        'Bernoullijeva porazdelitev\n'
-            '========================\n\n'
-            'Formula:\n'
-            'P(X = x) = pˣ · (1 − p)¹⁻ˣ\n\n'
-            'Podatki:\n'
-            'p = $p\n'
-            'x = $x\n\n'
-            'Formula z vstavljenimi podatki:\n'
-            'P(X = $x) = ${p}^$x · ${(1 - p)}^${1 - x}\n\n'
-            'Rezultat:\n'
-            'P(X = $x) = ${value.toStringAsFixed(6)}\n\n'
-            'Razlaga:\n'
-            'Bernoullijeva porazdelitev opisuje en sam poskus\n'
-            'z dvema možnima izidoma (uspeh ali neuspeh).';
+          value = (x == 1) ? p : (1 - p);
+
+          result =
+          'Bernoullijeva porazdelitev\n'
+              '========================\n\n'
+              'Formula:\n'
+              'P(X = x) = pˣ · (1 − p)¹⁻ˣ\n\n'
+              'Podatki:\n'
+              'p = $p\n'
+              'x = $x\n\n'
+              'Formula z vstavljenimi podatki:\n'
+              'P(X = $x) = ${p}^$x · ${(1 - p)}^${1 - x}\n\n'
+              'Rezultat:\n'
+              'P(X = $x) = ${value.toStringAsFixed(6)}\n\n'
+              'Razlaga:\n'
+              'Bernoullijeva porazdelitev opisuje en sam poskus\n'
+              'z dvema možnima izidoma (uspeh ali neuspeh).';
+        }
+
+        /* ===== BINOMSKA ===== */
+        else if (selectedDiskretna == DiskretnaPorazdelitev.binomska) {
+          int n = int.parse(nDistController.text);
+          int k = int.parse(kDistController.text);
+          double p = double.parse(pController.text);
+
+          value = binomska(n, k, p);
+
+          result =
+          'Binomska porazdelitev\n'
+              '====================\n\n'
+              'Formula:\n'
+              'P(X = k) = C(n,k) · pᵏ · (1 − p)ⁿ⁻ᵏ\n\n'
+              'Podatki:\n'
+              'n = $n\n'
+              'k = $k\n'
+              'p = $p\n\n'
+              'Formula z vstavljenimi podatki:\n'
+              'P(X = $k) = C($n,$k) · $p^$k · ${(1 - p)}^${n - k}\n\n'
+              'Rezultat:\n'
+              'P(X = $k) = ${value.toStringAsFixed(6)}\n\n'
+              'Razlaga:\n'
+              'Binomska porazdelitev opisuje verjetnost\n'
+              'natanko k uspehov v n neodvisnih poskusih,\n'
+              'kjer je verjetnost uspeha enaka p.';
+        }
+
+        /* ===== POISSON ===== */
+        else if (selectedDiskretna == DiskretnaPorazdelitev.poisson) {
+          int k = int.parse(kDistController.text);
+          double lambda = double.parse(lambdaController.text);
+
+          value = poisson(k, lambda);
+
+          result =
+          'Poissonova porazdelitev\n'
+              '======================\n\n'
+              'Formula:\n'
+              'P(X = k) = (λᵏ · e⁻ˡ) / k!\n\n'
+              'Podatki:\n'
+              'k = $k\n'
+              'λ = $lambda\n\n'
+              'Formula z vstavljenimi podatki:\n'
+              'P(X = $k) = ($lambda^$k · e^-$lambda) / $k!\n\n'
+              'Rezultat:\n'
+              'P(X = $k) = ${value.toStringAsFixed(6)}\n\n'
+              'Razlaga:\n'
+              'Poissonova porazdelitev opisuje verjetnost,\n'
+              'da se bo v določenem časovnem ali prostorskem\n'
+              'intervalu zgodilo natanko k dogodkov.';
+        }
       }
 
-      /* ================= BINOMSKA ================= */
-      else if (selectedDiskretna == DiskretnaPorazdelitev.binomska) {
-        int n = int.parse(nDistController.text);
-        int k = int.parse(kDistController.text);
-        double p = double.parse(pController.text);
+      /* ================= ZVEZNE ================= */
+      else if (selectedTip == TipPorazdelitve.zvezna) {
 
-        value = binomska(n, k, p);
+        /* ===== NORMALNA ===== */
+        if (selectedZvezna == ZveznaPorazdelitev.normalna) {
+          double x = double.parse(xDistController.text);
+          double mu = double.parse(muController.text);
+          double sigma = double.parse(sigmaController.text);
 
-        result =
-        'Binomska porazdelitev\n'
-            '====================\n\n'
-            'Formula:\n'
-            'P(X = k) = C(n,k) · pᵏ · (1 − p)ⁿ⁻ᵏ\n\n'
-            'Podatki:\n'
-            'n = $n\n'
-            'k = $k\n'
-            'p = $p\n\n'
-            'Formula z vstavljenimi podatki:\n'
-            'P(X = $k) = C($n,$k) · $p^$k · ${(1 - p)}^${n - k}\n\n'
-            'Rezultat:\n'
-            'P(X = $k) = ${value.toStringAsFixed(6)}\n\n'
-            'Razlaga:\n'
-            'Binomska porazdelitev opisuje verjetnost\n'
-            'natanko k uspehov v n neodvisnih poskusih,\n'
-            'kjer je verjetnost uspeha enaka p.';
+          if (sigma <= 0) throw Exception();
+
+          value = normalna(x, mu, sigma);
+
+          result =
+          'Normalna porazdelitev\n'
+              '====================\n\n'
+              'Formula:\n'
+              'f(x) = 1 / (σ√(2π)) · e^(-(x − μ)² / (2σ²))\n\n'
+              'Podatki:\n'
+              'x = $x\n'
+              'μ = $mu\n'
+              'σ = $sigma\n\n'
+              'Formula z vstavljenimi podatki:\n'
+              'f($x) = 1 / ($sigma√(2π)) · e^(-($x − $mu)² / (2·$sigma²))\n\n'
+              'Rezultat (gostota):\n'
+              'f($x) = ${value.toStringAsFixed(6)}\n\n'
+              'Razlaga:\n'
+              'Normalna porazdelitev opisuje zvezne\n'
+              'naključne spremenljivke, kjer so vrednosti\n'
+              'simetrično razporejene okoli povprečja μ.';
+        }
+
+        /* ===== EKSPONENTNA ===== */
+        else if (selectedZvezna == ZveznaPorazdelitev.eksponentna) {
+          double x = double.parse(xDistController.text);
+          double lambda = double.parse(lambdaController.text);
+
+          value = eksponentna(x, lambda);
+
+          result =
+          'Eksponentna porazdelitev\n'
+              '=======================\n\n'
+              'Formula:\n'
+              'f(x) = λ · e⁻ˡˣ,  x ≥ 0\n\n'
+              'Podatki:\n'
+              'x = $x\n'
+              'λ = $lambda\n\n'
+              'Formula z vstavljenimi podatki:\n'
+              'f($x) = $lambda · e^(-$lambda·$x)\n\n'
+              'Rezultat (gostota):\n'
+              'f($x) = ${value.toStringAsFixed(6)}\n\n'
+              'Razlaga:\n'
+              'Eksponentna porazdelitev opisuje čas do\n'
+              'naslednjega dogodka v Poissonovem procesu.';
+        }
+
+        /* ===== UNIFORMNA ===== */
+        else if (selectedZvezna == ZveznaPorazdelitev.uniformna) {
+          double x = double.parse(xDistController.text);
+          double a = double.parse(aController.text);
+          double b = double.parse(bController.text);
+
+          value = uniformna(x, a, b);
+
+          result =
+          'Uniformna porazdelitev\n'
+              '=====================\n\n'
+              'Formula:\n'
+              'f(x) = 1 / (b − a),  a ≤ x ≤ b\n\n'
+              'Podatki:\n'
+              'x = $x\n'
+              'a = $a\n'
+              'b = $b\n\n'
+              'Formula z vstavljenimi podatki:\n'
+              'f($x) = 1 / ($b − $a)\n\n'
+              'Rezultat (gostota):\n'
+              'f($x) = ${value.toStringAsFixed(6)}\n\n'
+              'Razlaga:\n'
+              'Uniformna porazdelitev pomeni, da so vse\n'
+              'vrednosti na intervalu [a, b] enako verjetne.';
+        }
       }
 
-      /* ================= POISSON ================= */
-      else if (selectedDiskretna == DiskretnaPorazdelitev.poisson) {
-        int k = int.parse(kDistController.text);
-        double lambda = double.parse(lambdaController.text);
-
-        value = poisson(k, lambda);
-
-        result =
-        'Poissonova porazdelitev\n'
-            '======================\n\n'
-            'Formula:\n'
-            'P(X = k) = (λᵏ · e⁻ˡ) / k!\n\n'
-            'Podatki:\n'
-            'k = $k\n'
-            'λ = $lambda\n\n'
-            'Formula z vstavljenimi podatki:\n'
-            'P(X = $k) = ($lambda^$k · e^-$lambda) / $k!\n\n'
-            'Rezultat:\n'
-            'P(X = $k) = ${value.toStringAsFixed(6)}\n\n'
-            'Razlaga:\n'
-            'Poissonova porazdelitev opisuje verjetnost,\n'
-            'da se bo v določenem časovnem ali prostorskem\n'
-            'intervalu zgodilo natanko k dogodkov.';
-      }
-
-      /* ================= NORMALNA ================= */
-      else if (selectedZvezna == ZveznaPorazdelitev.normalna) {
-        double x = double.parse(xDistController.text);
-        double mu = double.parse(muController.text);
-        double sigma = double.parse(sigmaController.text);
-
-        value = normalna(x, mu, sigma);
-
-        result =
-        'Normalna porazdelitev\n'
-            '====================\n\n'
-            'Formula:\n'
-            'f(x) = 1 / (σ√(2π)) · e^(-(x − μ)² / (2σ²))\n\n'
-            'Podatki:\n'
-            'x = $x\n'
-            'μ = $mu\n'
-            'σ = $sigma\n\n'
-            'Formula z vstavljenimi podatki:\n'
-            'f($x) = 1 / ($sigma√(2π)) · e^(-($x − $mu)² / (2·$sigma²))\n\n'
-            'Rezultat (gostota):\n'
-            'f($x) = ${value.toStringAsFixed(6)}\n\n'
-            'Razlaga:\n'
-            'Normalna porazdelitev opisuje zvezne\n'
-            'naključne spremenljivke, kjer so vrednosti\n'
-            'simetrično razporejene okoli povprečja μ.';
-      }
-
-      /* ================= EKSPONENTNA ================= */
-      else if (selectedZvezna == ZveznaPorazdelitev.eksponentna) {
-        double x = double.parse(xDistController.text);
-        double lambda = double.parse(lambdaController.text);
-
-        value = eksponentna(x, lambda);
-
-        result =
-        'Eksponentna porazdelitev\n'
-            '=======================\n\n'
-            'Formula:\n'
-            'f(x) = λ · e⁻ˡˣ,  x ≥ 0\n\n'
-            'Podatki:\n'
-            'x = $x\n'
-            'λ = $lambda\n\n'
-            'Formula z vstavljenimi podatki:\n'
-            'f($x) = $lambda · e^(-$lambda·$x)\n\n'
-            'Rezultat (gostota):\n'
-            'f($x) = ${value.toStringAsFixed(6)}\n\n'
-            'Razlaga:\n'
-            'Eksponentna porazdelitev opisuje čas do\n'
-            'naslednjega dogodka v Poissonovem procesu.';
-      }
-
-      /* ================= UNIFORMNA ================= */
-      else {
-        double x = double.parse(xDistController.text);
-        double a = double.parse(aController.text);
-        double b = double.parse(bController.text);
-
-        value = uniformna(x, a, b);
-
-        result =
-        'Uniformna porazdelitev\n'
-            '=====================\n\n'
-            'Formula:\n'
-            'f(x) = 1 / (b − a),  a ≤ x ≤ b\n\n'
-            'Podatki:\n'
-            'x = $x\n'
-            'a = $a\n'
-            'b = $b\n\n'
-            'Formula z vstavljenimi podatki:\n'
-            'f($x) = 1 / ($b − $a)\n\n'
-            'Rezultat (gostota):\n'
-            'f($x) = ${value.toStringAsFixed(6)}\n\n'
-            'Razlaga:\n'
-            'Uniformna porazdelitev pomeni, da so vse\n'
-            'vrednosti na intervalu [a, b] enako verjetne.';
-      }
-
-      setState(() => result = result);
-
-
-    } catch (_) {
+      setState(() {});
+    } catch (e) {
       setState(() => result = 'Invalid input');
     }
   }
+
 
 
 
@@ -987,8 +997,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(widget.title)),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+      body: Center(
         child: Column(
           children: [
             /* MODE SWITCH */
@@ -1031,6 +1040,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
               ],
             ),
+            ElevatedButton.icon(
+              onPressed: () {
+                setState(() {
+                  showAdvancedUI = !showAdvancedUI;
+                });
+              },
+              icon: Icon(showAdvancedUI ? Icons.expand_less : Icons.expand_more),
+              label: Text(showAdvancedUI ? 'Skrij nastavitve' : 'Prikaži nastavitve'),
+            ),
+          if (showAdvancedUI) ...[
             //int z
             const SizedBox(height: 10),
             if (mode == Mode.intervalZaupanja) ...[
@@ -1474,7 +1493,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ],
             ],
-
+          ],
             // neslednje
             const SizedBox(height: 20),
 
