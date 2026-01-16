@@ -222,13 +222,10 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       mode = entry.mode;
       result = entry.result;
-
-      // Clear all controllers first (important!)
       for (final controller in controllerMap.values) {
         controller.clear();
       }
 
-      // Restore only what exists in history
       entry.inputs.forEach((key, value) {
         if (controllerMap.containsKey(key)) {
           controllerMap[key]!.text = value;
@@ -432,7 +429,23 @@ class _MyHomePageState extends State<MyHomePage> {
           '   z = ($x − $mu) / ${se.toStringAsFixed(4)}\n'
           '   z = ${z.toStringAsFixed(4)}';
     });
+    final entry = HistoryEntry(
+      mode: Mode.centralniLimitniIzrek,
+      inputs: {
+        'mu': muController.text,
+        'sigma': sigmaController.text,
+        'nClt': nCltController.text,
+        'x': xController.text,
+      },
+      result: result,
+      time: DateTime.now(),
+    );
 
+    setState(() {
+      history.insert(0, entry);
+    });
+
+    saveHistory();
 
   }
 
@@ -1030,9 +1043,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     switch (selectedDogodek) {
 
-    // =====================
+
     // VSOTA DOGODKOV
-    // =====================
       case Dogodki.vsota:
         final n = probs.length;
         final events = List.generate(n, (i) => eventName(i));
@@ -1084,9 +1096,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         break;
 
-    // =====================
     // ZMNOŽEK
-    // =====================
       case Dogodki.zmnozek:
         value = probs.reduce((a, b) => a * b);
 
@@ -1098,9 +1108,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
         break;
 
-    // =====================
     // POGOJNA
-    // =====================
       case Dogodki.pogojna:
         double? pAB =
         double.tryParse(intersectionControllers['AB']?.text ?? '');
@@ -1128,6 +1136,20 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       result = postopek;
     });
+    final entry = HistoryEntry(
+      mode: Mode.dogodki,
+      inputs: {
+
+      },
+      result: result,
+      time: DateTime.now(),
+    );
+
+    setState(() {
+      history.insert(0, entry);
+    });
+
+    saveHistory();
   }
 
   void onDogodekChange(Dogodki d) {
@@ -1369,75 +1391,103 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ],
 
-            /* DOGODKI UI */
-            if (mode == Mode.dogodki) ...[
-              ...List.generate(eventControllers.length, (i) {
-                return TextField(
-                  controller: eventControllers[i],
-                  decoration: InputDecoration(labelText: 'P(${eventName(i)})'),
-                  keyboardType: TextInputType.number,
-                );
-              }),
+            if (mode == Mode.dogodki)
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.5,
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
 
-              if (selectedDogodek != Dogodki.pogojna)
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      eventControllers.add(TextEditingController());
-                    });
-                  },
-                  child: const Text('Dodaj dogodek'),
-                ),
-              
-              if (selectedDogodek == Dogodki.vsota ||
-                  selectedDogodek == Dogodki.zmnozek)
-                SizedBox(
-                  height: 250, // ← prilagodi po potrebi
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: generateSubsets(eventControllers.length).map((subset) {
-                        String key = subset.map((i) => eventName(i)).join();
+                      Center(
+                        child: DropdownButton<Dogodki>(
+                          value: selectedDogodek,
+                          onChanged: (v) => onDogodekChange(v!),
+                          items: const [
+                            DropdownMenuItem(
+                              value: Dogodki.vsota,
+                              child: Text('Vsota dogodkov'),
+                            ),
+                            DropdownMenuItem(
+                              value: Dogodki.zmnozek,
+                              child: Text('Zmnožek dogodkov'),
+                            ),
+                            DropdownMenuItem(
+                              value: Dogodki.pogojna,
+                              child: Text('Pogojna verjetnost'),
+                            ),
+                          ],
+                        ),
+                      ),
 
-                        intersectionControllers.putIfAbsent(
-                          key,
-                              () => TextEditingController(),
-                        );
+                      const SizedBox(height: 12),
 
+                      ...List.generate(eventControllers.length, (i) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
                           child: TextField(
-                            controller: intersectionControllers[key],
-                            decoration: InputDecoration(labelText: 'P($key)'),
+                            controller: eventControllers[i],
+                            decoration: InputDecoration(
+                              labelText: 'P(${eventName(i)})',
+                              border: const OutlineInputBorder(),
+                            ),
                             keyboardType: TextInputType.number,
                           ),
                         );
-                      }).toList(),
-                    ),
+                      }),
+
+                      if (selectedDogodek == Dogodki.pogojna)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+                          child: TextField(
+                            controller: intersectionControllers.putIfAbsent(
+                              'AB',
+                                  () => TextEditingController(),
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'P(A ∩ B)',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                          ),
+                        ),
+
+
+                      if (selectedDogodek == Dogodki.vsota ||
+                          selectedDogodek == Dogodki.zmnozek)
+                        Column(
+                          children: generateSubsets(eventControllers.length).map((subset) {
+                            final key = subset.map((i) => eventName(i)).join();
+
+                            intersectionControllers.putIfAbsent(
+                              key,
+                                  () => TextEditingController(),
+                            );
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 6,
+                              ),
+                              child: TextField(
+                                controller: intersectionControllers[key],
+                                decoration: InputDecoration(
+                                  labelText: 'P($key)',
+                                  border: const OutlineInputBorder(),
+                                ),
+                                keyboardType: TextInputType.number,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                    ],
                   ),
                 ),
-
-              const SizedBox(height: 12),
-
-              // dropdown
-              DropdownButton<Dogodki>(
-                value: selectedDogodek,
-                onChanged: (v) => onDogodekChange(v!),
-                items: const [
-                  DropdownMenuItem(
-                    value: Dogodki.vsota,
-                    child: Text('Vsota dogodkov'),
-                  ),
-                  DropdownMenuItem(
-                    value: Dogodki.zmnozek,
-                    child: Text('Zmnožek dogodkov'),
-                  ),
-                  DropdownMenuItem(
-                    value: Dogodki.pogojna,
-                    child: Text('Pogojna verjetnost'),
-                  ),
-                ],
               ),
-            ],
+
+
 
 
             /* ZGODOVINA UI */
@@ -1475,7 +1525,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () async {
                   setState(() => history.clear());
                   final prefs = await SharedPreferences.getInstance();
-                  prefs.remove('history'); // lokalno briše
+                  prefs.remove('history');
                 },
                 icon: const Icon(Icons.delete),
                 label: const Text('Počisti zgodovino'),
